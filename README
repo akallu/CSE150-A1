@@ -1,0 +1,52 @@
+CSE 150 - Project 1
+===================
+
+Student names and emails
+------------------------
+eg.
+Student 1 name, student1@ucsd.edu
+Student 2 name, student2@ucsd.edu
+
+
+Student contribution
+--------------------
+Briefly describe how each student contributed to the project
+
+
+Testing
+-------
+Describe how you tested your puzzle solver.
+
+Optional: Include in your submission any interesting test puzzles you created and give
+a brief description of these.
+
+
+Heuristic explanation
+---------------------
+Briefly describe the heuristic you implemented for command line argument "Other".
+Is the heuristic admissible? How does it perform compared to the manhattan heuristic?
+Include an example command and output using the heuristic, and compare
+this to using Manhattan distance. You can use either A_Star or Greedy search agent. eg.
+$ java PuzzleSolver testfiles/easy1.txt Greedy Other
+solution length: 6
+nodes expanded: 7
+NESWNW
+$ java PuzzleSolver testfiles/easy1.txt Greedy Manhattan
+...
+
+Optional: Explain any other heuristics you considered or implemented.
+
+
+Analysis
+--------
+Run all of the different search algorithms for a single puzzle file, and include the output.
+Briefly analyze the results. Please include the puzzle file you used in your submission.
+
+
+Other details
+-------------
+(optional)
+Briefly describe any other implementation details or optimizations we should know about.
+Explain how to compile your code if it is not straightforward.
+
+

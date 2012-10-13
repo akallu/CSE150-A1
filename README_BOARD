@@ -1,0 +1,28 @@
+hey so basically ive done some basic testing on this class and everything seems to be working.
+
+You can read through the code and see if it makes sense (it should, hopefully haha)
+but pretty much there are a couple major things to know about the class:
+
+  Each board instance has two 2 dimensional lists (matrices):
+    one matrix is the current state of the puzzle
+    the other matrix is the goal state of the puzzle
+  Each board instance also has 2 dictionary objects (pythons hashtable implementation):
+    one dictionary holds coordinates (i, j) for each number in the current state of the puzzle
+    the other dictionary holds coords for each number in the goal state of the puzzle
+  
+In terms of methods, there are a couple of important ones:
+  board_object.move(n):
+    since the only piece we are actually going to move is the zero, we just specify
+    whether we want it to move Left, Right, Up, or Down. So the argument n in the 
+    move functions corresponds to this 0=L, 1=R, 2=U, 3=D. It returns true and changes the
+    current state if it was a valid move (ie it didnt go out of bounds on the board)
+
+  board_object.mismatches():
+    simply compares our current matrix with the goal matrix and returns the number of positions
+    that our current matrix differs from the goal matrix
+
+  board_object.print_matrix():
+    pretty self explanatory prints the current state of the matrix to terminal, you can type 'goal'
+    as the argument to print the goal matrix if you want
+    also prints board_objects.mismatches() as the bottom line
+
