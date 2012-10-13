@@ -142,6 +142,14 @@ def greedy_best_first(b):
     curr = min(curr[0].make_all_states(), key=helper)
     path += curr[2]
   return path
+
+def BFS(b):
+  #current nodes
+  c_nodes = b.make_all_states
+  #children nodes
+  ch_nodes = []
+
+  for i in xrange(len(c_nodes)):
     
   
 def helper(t):
@@ -150,19 +158,7 @@ def helper(t):
 def main():
   b = board(sys.argv[1])
   print 'INITIAL STATE:'
-  c = copy.deepcopy(b)
   b.print_matrix()
-  '''c.move(0)
-  c.print_matrix()
-  c = copy.deepcopy(b)
-  c.move(1)
-  c.print_matrix()
-  c = copy.deepcopy(b)
-  c.move(2)
-  c.print_matrix()
-  c = copy.deepcopy(b)
-  c.move(3)
-  c.print_matrix()'''
 
   print greedy_best_first(b)
   
