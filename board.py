@@ -101,7 +101,7 @@ class board:
       for num in a:
         print str(num) + '\t',
       print ''
-    print self.mismatches()
+    print 'MISMATCH SCORE: ', self.mismatches(), '\n'
 
   def print_coords(self, flag=None):
     if flag == None:
@@ -121,15 +121,38 @@ class board:
       for j in xrange(self.m):
         if self.matrix[i][j] != self.goal_matrix[i][j]:
           score += 1
-    return score 
-   
+    return score
+
+  #returns a list of tuples of form (board_state, mismatch_score, movement)
+  #representing all valid moves possible from the previous state
+  def make_all_states(self):
+    valid_states = []
+    moves = ['W', 'E', 'N', 'S']
+    for i in xrange(4):
+      tmp = copy.deepcopy(self)
+      if tmp.move(i):
+        valid_states.append((tmp, tmp.mismatches(), moves[i]))
+    return valid_states
+
+#where b is the initial board
+def greedy_best_first(b):
+  curr = min(b.make_all_states(), key=helper)
+  path = curr[2]
+  while curr[1] != 0:
+    curr = min(curr[0].make_all_states(), key=helper)
+    path += curr[2]
+  return path
+    
+  
+def helper(t):
+  return t[1]
 
 def main():
   b = board(sys.argv[1])
   print 'INITIAL STATE:'
   c = copy.deepcopy(b)
   b.print_matrix()
-  c.move(0)
+  '''c.move(0)
   c.print_matrix()
   c = copy.deepcopy(b)
   c.move(1)
@@ -139,7 +162,10 @@ def main():
   c.print_matrix()
   c = copy.deepcopy(b)
   c.move(3)
-  c.print_matrix()
+  c.print_matrix()'''
+
+  print greedy_best_first(b)
+  
 
 # Standard boilerplate to call the main() function.
 if __name__ == '__main__':
