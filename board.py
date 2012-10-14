@@ -2,6 +2,7 @@
 import re
 import sys
 import copy
+import time
 
 class board:
   #constructs a board object which loads in a csv file of puzzle
@@ -101,7 +102,8 @@ class board:
       for num in a:
         print str(num) + '\t',
       print ''
-    print 'MISMATCH SCORE: ', self.mismatches(), '\n'
+    #print 'MISMATCH SCORE: ', self.mismatches(), '\n'
+    print ''
 
   def print_coords(self, flag=None):
     if flag == None:
@@ -131,27 +133,56 @@ class board:
     for i in xrange(4):
       tmp = copy.deepcopy(self)
       if tmp.move(i):
-        valid_states.append((tmp, tmp.mismatches(), moves[i]))
+        valid_states.append([tmp, tmp.mismatches(), moves[i]])
     return valid_states
 
-#where b is the initial board
-def greedy_best_first(b):
+#Greedy Best First Search
+def GBF(b):
   curr = min(b.make_all_states(), key=helper)
   path = curr[2]
   while curr[1] != 0:
     curr = min(curr[0].make_all_states(), key=helper)
     path += curr[2]
-  return path
+  return (len(path), len(path), path)
 
+# Breadth First Search
 def BFS(b):
   #current nodes
-  c_nodes = b.make_all_states
+  c_nodes = b.make_all_states()
   #children nodes
   ch_nodes = []
+  nodes_explored = 1
+  nodes_expanded = 1
+  if b.mismatches() == 0:
+    return ('', 0, 0)
+  while True:
+    #search through current nodes and see if there exists a solution
+    for i in xrange(len(c_nodes)):
+      #we found a solution, return it
+      if c_nodes[i][1] == 0:
+        return (len(c_nodes[i][2]), nodes_expanded, c_nodes[i][2])
 
-  for i in xrange(len(c_nodes)):
-    
-  
+    #we did not find a solution above, so we expand each of the nodes
+    for i in xrange(len(c_nodes)):
+        #make the children states of the current state
+        tmp = c_nodes[i][0].make_all_states()
+
+        #append parent's path to its children's path
+        for j in xrange(len(tmp)):
+          tmp[j][2] = c_nodes[i][2] + tmp[j][2]
+
+        #add the modified children nodes to the children node list
+        ch_nodes += tmp
+        nodes_expanded += 1
+
+    #children nodes become the current nodes
+    c_nodes = ch_nodes
+
+def print_solutions(t):
+  print 'Sol. Length:\t', t[0]
+  print 'Nodes Expanded:\t', t[1]
+  print 'Sol. Path:\t', t[2]
+
 def helper(t):
   return t[1]
 
@@ -160,7 +191,15 @@ def main():
   print 'INITIAL STATE:'
   b.print_matrix()
 
-  print greedy_best_first(b)
+  start = time.time()
+  print 'Greedy Best First Search found solution:' 
+  print_solutions(GBF(b))
+  print 'In time: ', time.time()-start, '\n'
+
+  start = time.time()
+  print 'Breadth First Search found solution:'
+  print_solutions(BFS(b))
+  print 'In time: ', time.time()-start, '\n'
   
 
 # Standard boilerplate to call the main() function.
