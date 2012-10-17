@@ -204,8 +204,61 @@ def BFS(b):
     #children nodes become the current nodes
     c_nodes = ch_nodes
 
+dfs_node_count = 0
+#Depth-limited Depth First Search
+def DFS(b, limit):
+  global dfs_node_count
+  dfs_node_count = 1
+  return rec_DFS('', b, int(limit))
+
+#recursive DFS that does the heavy lifting
+#A return of -1 signifies CUTOFF
+#A return of -2 signifies FAILURE
+def rec_DFS(path, b, limit):
+  global dfs_node_count
+  #check if current node is solution
+  if b.mismatches() == 0:
+    return (len(path), dfs_node_count, path)
+  #check if limit has been reached, return cutoff value if yes
+  elif limit == 0:
+    return -1
+  else:
+    #set cutoff variable to False
+    cutoff = False
+    #generate all possible moves from current state
+    curr_nodes = b.make_all_states()
+    for i in xrange(len(curr_nodes)):
+      #append parent's path to its children's path
+      curr_nodes[i][3] = path + curr_nodes[i][3]
+      #increment number of expanded nodes
+      dfs_node_count += 1
+      #recursion happens here
+      result = rec_DFS(curr_nodes[i][3], curr_nodes[i][0], limit-1)
+      #check if result was cutoff, set cutoff if yes
+      if result == -1:
+        cutoff = True
+      #check if result was a failure, if not, return result
+      elif result != -2:
+        return result
+    if cutoff == True:
+      #return cutoff
+      return -1
+    else:
+      #return failure
+      return -2
+
+#Iterative Deepening Search
+def IDS(b):
+  depth = 1
+  while depth <= 1000:
+    result = rec_DFS('', b, depth)
+    depth += 1
+    if result != -1:
+      return result
+
+
 def print_solutions(t):
-  if t != -1:
+  if t > 0:
     print 'Sol. Length:\t', t[0]
     print 'Nodes Expanded:\t', t[1]
     print 'Sol. Path:\t', t[2]
@@ -218,26 +271,54 @@ def manhattan_helper(t):
   return t[2]
 
 def main():
+  if len(sys.argv) < 3:
+    print 'Usage:'
+    print '> python board.py (puzzle file) (algorithm) [heuristic|depth]\n'
+    sys.exit(1)
   b = board(sys.argv[1])
   alg = sys.argv[2]
   print 'INITIAL STATE:'
   b.print_matrix()
 
   if alg == 'Greedy':
-      start = time.time()
-      print 'Greedy Best First Search found solution:' 
-      print_solutions(GBF(b, sys.argv[3]))
-      print 'In time: ', time.time()-start, '\n'
-  if alg == 'A_Star':
+    if len(sys.argv) < 4:
+      print 'Heuristic not specified: use either "Manhattan" or "Mismatch"'
+      print 'Usage:'
+      print '> python board.py (puzzle file) (algorithm) (heuristic)\n'
+      sys.exit(1)
+    start = time.time()
+    print 'Greedy Best First Search found solution:' 
+    print_solutions(GBF(b, sys.argv[3]))
+    print 'In time: ', time.time()-start, '\n'
+  elif alg == 'A_Star':
     start = time.time()
     print 'A* Search found solution:' 
     print_solutions(A_Star(b, 'Mismatch'))
     print 'In time: ', time.time()-start, '\n'
-  if alg == 'BFS':
+  elif alg == 'BFS':
     start = time.time()
     print 'Breadth First Search found solution:' 
     print_solutions(BFS(b))
-    print 'In time: ', time.time()-start, '\n'    
+    print 'In time: ', time.time()-start, '\n'  
+  elif alg == 'DFS':
+    if len(sys.argv) < 4:
+      print 'Depth not specified'
+      print 'Usage:'
+      print '> python board.py (puzzle file) (algorithm) (depth)\n'
+      sys.exit(1)
+    start = time.time()
+    print 'Depth-limited Depth First Search found solution:'
+    print_solutions(DFS(b, sys.argv[3]))
+    print 'In time: ', time.time()-start, '\n'
+  elif alg == 'IDS':
+    start = time.time()
+    print 'Iterative Deepening Search found solution:'
+    print_solutions(IDS(b))
+    print 'In time: ', time.time()-start, '\n'
+  else:
+    print 'Usage:'
+    print '> python board.py (puzzle file) (algorithm) [heuristic|depth]\n'
+
 
 # Standard boilerplate to call the main() function.
 if __name__ == '__main__':
