@@ -235,15 +235,9 @@ def main():
     print 'In time: ', time.time()-start, '\n'
   if alg == 'BFS':
     start = time.time()
-    print 'A* Search found solution:' 
-    print_solutions(A_Star(b, 'Mismatch'))
+    print 'Breadth First Search found solution:' 
+    print_solutions(BFS(b))
     print 'In time: ', time.time()-start, '\n'    
-
-  start = time.time()
-  print 'Breadth First Search found solution:'
-  print_solutions(BFS(b))
-  print 'In time: ', time.time()-start, '\n'
-  
 
 # Standard boilerplate to call the main() function.
 if __name__ == '__main__':
