@@ -44,8 +44,6 @@ class board:
         num = self.matrix[zc[0]-1][zc[1]]
         self.matrix[zc[0]][zc[1]] = num
         self.matrix[zc[0]-1][zc[1]] = 0
-        self.coords[0] = [zc[0]-1, zc[1]]
-        self.coords[num] = zc
     #move down
     if d == 3:
       #detect invalid out of board move
@@ -55,8 +53,6 @@ class board:
         num = self.matrix[zc[0]+1][zc[1]]
         self.matrix[zc[0]][zc[1]] = num
         self.matrix[zc[0]+1][zc[1]] = 0
-        self.coords[0] = [zc[0]+1, zc[1]]
-        self.coords[num] = zc
     #move left
     if d == 0:
       #detect invalid out of board move
@@ -66,8 +62,6 @@ class board:
         num = self.matrix[zc[0]][zc[1]-1]
         self.matrix[zc[0]][zc[1]] = num
         self.matrix[zc[0]][zc[1]-1] = 0
-        self.coords[0] = [zc[0], zc[1]-1]
-        self.coords[num] = zc
     #move right
     if d == 1:
       #detect invalid out of board move
@@ -77,8 +71,7 @@ class board:
         num = self.matrix[zc[0]][zc[1]+1]
         self.matrix[zc[0]][zc[1]] = num
         self.matrix[zc[0]][zc[1]+1] = 0
-        self.coords[0] = [zc[0], zc[1]+1]
-        self.coords[num] = zc
+    self.coords = self.get_matrix_coords(self.matrix)
     return True
 
 
@@ -125,6 +118,17 @@ class board:
           score += 1
     return score
 
+  def manhattan(self):
+    score = 0
+    for i in xrange(self.n*self.m):
+      #coordinates of i in current state
+      a = self.coords[i][:]
+      #coordinates of i in goal state
+      b = self.goal_coords[i][:]
+      score += abs(a[0]-b[0])+abs(a[1]-b[1])
+    return score
+      
+
   #returns a list of tuples of form (board_state, mismatch_score, movement)
   #representing all valid moves possible from the previous state
   def make_all_states(self):
@@ -133,17 +137,39 @@ class board:
     for i in xrange(4):
       tmp = copy.deepcopy(self)
       if tmp.move(i):
-        valid_states.append([tmp, tmp.mismatches(), moves[i]])
+        #if a valid move occured, we append:
+        #the move state, its mismatch score, manhattan score, and the direction it moved
+        valid_states.append([tmp, tmp.mismatches(), tmp.manhattan(), moves[i]])
     return valid_states
 
 #Greedy Best First Search
-def GBF(b):
-  curr = min(b.make_all_states(), key=helper)
-  path = curr[2]
-  while curr[1] != 0:
-    curr = min(curr[0].make_all_states(), key=helper)
-    path += curr[2]
-  return (len(path), len(path), path)
+#
+#Parameters:
+# b = initial board state
+# h = string representing which heuristic to use
+#
+def GBF(b, h):
+  it = 0
+  if b.mismatches() == 0:
+    return ('', 0, 0)
+  if h == 'Manhattan':
+    curr = min(b.make_all_states(), key=manhattan_helper)
+  if h == 'Mismatch':
+    curr = min(b.make_all_states(), key=mismatch_helper)
+  path = curr[3]
+  #while the current boards mismatch score does not equal zero
+  #remember a mismatch score = 0 means goal state has been reached
+  #it represents cutoff size
+  while curr[1] != 0 and it < 1000:
+    it += 1
+    if h == 'Manhattan':
+      curr = min(curr[0].make_all_states(), key=manhattan_helper)
+    if h == 'Mismatch':
+      curr = min(curr[0].make_all_states(), key=mismatch_helper)
+    path += curr[3]
+  if it >= 1000:
+    return -1
+  return (len(path), len(path)+1, path)
 
 # Breadth First Search
 def BFS(b):
@@ -160,7 +186,7 @@ def BFS(b):
     for i in xrange(len(c_nodes)):
       #we found a solution, return it
       if c_nodes[i][1] == 0:
-        return (len(c_nodes[i][2]), nodes_expanded, c_nodes[i][2])
+        return (len(c_nodes[i][3]), nodes_expanded+1, c_nodes[i][3])
 
     #we did not find a solution above, so we expand each of the nodes
     for i in xrange(len(c_nodes)):
@@ -169,7 +195,7 @@ def BFS(b):
 
         #append parent's path to its children's path
         for j in xrange(len(tmp)):
-          tmp[j][2] = c_nodes[i][2] + tmp[j][2]
+          tmp[j][3] = c_nodes[i][3] + tmp[j][3]
 
         #add the modified children nodes to the children node list
         ch_nodes += tmp
@@ -179,22 +205,39 @@ def BFS(b):
     c_nodes = ch_nodes
 
 def print_solutions(t):
-  print 'Sol. Length:\t', t[0]
-  print 'Nodes Expanded:\t', t[1]
-  print 'Sol. Path:\t', t[2]
+  if t != -1:
+    print 'Sol. Length:\t', t[0]
+    print 'Nodes Expanded:\t', t[1]
+    print 'Sol. Path:\t', t[2]
+  else:
+    print 'Solution was not found'
 
-def helper(t):
+def mismatch_helper(t):
   return t[1]
+def manhattan_helper(t):
+  return t[2]
 
 def main():
   b = board(sys.argv[1])
+  alg = sys.argv[2]
   print 'INITIAL STATE:'
   b.print_matrix()
 
-  start = time.time()
-  print 'Greedy Best First Search found solution:' 
-  print_solutions(GBF(b))
-  print 'In time: ', time.time()-start, '\n'
+  if alg == 'Greedy':
+      start = time.time()
+      print 'Greedy Best First Search found solution:' 
+      print_solutions(GBF(b, sys.argv[3]))
+      print 'In time: ', time.time()-start, '\n'
+  if alg == 'A_Star':
+    start = time.time()
+    print 'A* Search found solution:' 
+    print_solutions(A_Star(b, 'Mismatch'))
+    print 'In time: ', time.time()-start, '\n'
+  if alg == 'BFS':
+    start = time.time()
+    print 'A* Search found solution:' 
+    print_solutions(A_Star(b, 'Mismatch'))
+    print 'In time: ', time.time()-start, '\n'    
 
   start = time.time()
   print 'Breadth First Search found solution:'
