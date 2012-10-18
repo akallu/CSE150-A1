@@ -19,6 +19,7 @@ class board:
     self.goal_matrix = self.get_goal_matrix()
     self.goal_coords = self.get_matrix_coords(self.goal_matrix)
 
+  #returns the goal state matrix, the solved puzzle
   def get_goal_matrix(self):
     goal_matrix = []
     j = 0
@@ -75,7 +76,7 @@ class board:
     self.coords = self.get_matrix_coords(self.matrix)
     return True
 
-
+  #returns the [i,j] coordinates of any of the numbers in the matrix
   def get_matrix_coords(self, matrix):
     coords = {}
     i = j = 0
@@ -87,6 +88,7 @@ class board:
       i += 1
     return coords
 
+  #prints out the matrix with appropriate spacing, removed commas
   def print_matrix(self, flag=None):
     if flag == None:
       ma = self.matrix[:]
@@ -99,6 +101,8 @@ class board:
     #print 'MISMATCH SCORE: ', self.mismatches(), '\n'
     print ''
 
+  #prints out the coordinates of each number in the matrix. If no flag is 
+  #specified, this function prints out the coordinates of the goal matrix.
   def print_coords(self, flag=None):
     if flag == None:
       c = self.coords
@@ -111,6 +115,8 @@ class board:
         print str(c[num]) + '\t',
       print ''
 
+  #heuristic that sums up all of the straight line distances of each number
+  #between the current position and the goal position
   def SLD(self):
     score = 0
     for i in xrange(self.n*self.m):
@@ -150,7 +156,8 @@ class board:
       tmp = copy.deepcopy(self)
       if tmp.move(i):
         #if a valid move occured, and zero is not in same position, we append:
-        #the move state, its mismatch score, manhattan score, and the direction it moved
+        #the move state, its mismatch score, manhattan score, and the 
+        #direction it moved
         valid_states.append([tmp, tmp.mismatches(), tmp.manhattan(), moves[i]])
     return valid_states
 
@@ -161,9 +168,13 @@ class board:
 # h = string representing which heuristic to use
 #
 def GBF(b, h):
+  #the iterator, keeps count to make sure we don't go on forever if there is
+  #no solution...
   it = 0
+  #no mismatches, we are done; return!
   if b.mismatches() == 0:
     return ('', 0, 0)
+  #here we choose the heuristic we want GBF to use
   if h == 'Manhattan':
     cost = lambda x: x[0].manhattan()
   if h == 'Mismatch':
@@ -186,8 +197,11 @@ def GBF(b, h):
     for node in curr[0].make_all_states():
       if not curr[3]+node[3] in return_to_parent_state:
         nodes.append(node)
+    #out of all the next possible moves, choose the cheapest move
     curr = min(nodes, key=cost)
-    path += curr[3]  
+    #append parent path with current path
+    path += curr[3]
+  #if we haven't found the solution path by 1000 steps, it's probably unsolvable
   if it >= 1000:
     return -1
 
@@ -222,6 +236,8 @@ def BFS(b):
         #append parent's path to its children's path
         for j in xrange(len(tmp)):
           tmp[j][3] = c_nodes[i][3] + tmp[j][3]
+          #we make sure not to add the children who's move brings us back to
+          #the parent state we were just at
           if len(tmp[j][3]) > 1:
             if not tmp[j][3][-2:] in return_to_parent_state:
               ch_nodes.append(tmp[j])
@@ -230,9 +246,11 @@ def BFS(b):
     #children nodes become the current nodes
     c_nodes = ch_nodes
 
+#global variable to keep count in rec_DFS
 dfs_node_count = 0
 #Depth-limited Depth First Search
 def DFS(b, limit):
+  #let's just reset it just in case there's a leftover value
   global dfs_node_count
   dfs_node_count = 1
   return rec_DFS('', b, int(limit))
@@ -258,6 +276,7 @@ def rec_DFS(path, b, limit):
     curr_nodes = b.make_all_states()
     for node in curr_nodes:
       if len(path) > 0:
+        #remove states that would take us back to the parent state
         if path[-1]+node[3] in return_to_parent_state:
           curr_nodes.remove(node)
 
@@ -284,6 +303,8 @@ def rec_DFS(path, b, limit):
 #Iterative Deepening Search
 def IDS(b, lim):
   depth = 1
+  #all we have to do is use rec_DFS and use a loop to call it with an
+  #increasing depth
   while depth <= lim:
     result = rec_DFS('', b, depth)
     depth += 1
@@ -291,6 +312,7 @@ def IDS(b, lim):
       return result
 
 def A_Star(b, h):
+  #select the heuristic for A* to use
   if h == 'Manhattan':
     cost = lambda x: x.manhattan()
   if h == 'SLD' or h == 'Other':
@@ -302,15 +324,20 @@ def A_Star(b, h):
   nodes = b.make_all_states()
   nodes_expanded = len(nodes)
   return_to_parent_state = ['NS', 'SN', 'WE', 'EW']
+  #explore the current node and add it's children to the exp priority queue
   for node in nodes:
     heapq.heappush(exp, [len(node[3])+cost(node[0]), node[0], node[3]] )
   while True:
+    #get the node with the lowest cost. The cost is calculated by the length of
+    #path from the start to the current node plus the heuristic cost at the
+    #current node
     curr = heapq.heappop(exp)
+    #we found it! return
     if curr[1].mismatches() == 0:
       return (len(curr[2]), nodes_expanded, curr[2])
     nodes = curr[1].make_all_states()
     nodes_expanded += 1
-
+    #let's remove the nodes that take us back to the parent state
     for node in nodes:
       if not curr[2]+node[3] in return_to_parent_state:
         heapq.heappush(exp, [1+len(curr[2])+cost(node[0]), node[0], curr[2]+node[3]])

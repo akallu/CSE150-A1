@@ -4,21 +4,49 @@ CSE 150 - Project 1
 Student names and emails
 ------------------------
 eg.
-Student 1 name, student1@ucsd.edu
-Student 2 name, student2@ucsd.edu
-
+Amritpal Kallu, akallu@ucsd.edu
+Justin Cha, jwcha@ucsd.edu
 
 Student contribution
 --------------------
-Briefly describe how each student contributed to the project
-
+Amrit coded the board class that let us concretely define the states of the
+program and each action, fully determined, that the agent can take. He also 
+coded the algorithms for Breadth First Search and Greedy Best First Search.
+Justin coded the algorithms for Depth-limited Depth First Search and Iterative
+Deepening Search.
+Both Amrit and Justin worked on the A* algorithm and finished it together.
 
 Testing
 -------
 Describe how you tested your puzzle solver.
+We tested our solver by giving it the standard inputs in the zip file provided
+and by creating our own puzzle files. To create a puzzle file, we simply started
+off with a solved board and moved the space (0) at will, updating the board with
+each move.
 
 Optional: Include in your submission any interesting test puzzles you created and give
 a brief description of these.
+We created many tests to test our solver, here are three of them:
+===hard.txt===
+5,1,2,3,4
+6,11,7,8,9
+10,12,17,13,14
+15,16,22,18,19
+20,21,23,24,0
+==============
+
+===med1.txt===
+3,1,0
+6,5,2
+7,4,8
+==============
+
+==insane.txt==
+1,5,7,2
+4,9,6,3
+8,10,14,11
+12,13,15,0
+==============
 
 
 Heuristic explanation
@@ -34,13 +62,94 @@ NESWNW
 $ java PuzzleSolver testfiles/easy1.txt Greedy Manhattan
 ...
 
+The heuristic we used to implement the 'Other' argument is the Straight Line 
+Distance(SLD) heuristic which calculates the Euclidean distance between the 
+coordinates of the current state and the coordinates of the goal state and sums
+the distances for all the numbers in the board. We know this heuristic to be
+admissable because it is physically impossible to move a piece in a straight
+line to it's goal position and that any legal move to the goal position will
+cost more than the SLD. The SLD heuristic performs a bit more poorly than the 
+Manhattan heuristic. Although they find the same solution path, the number of
+nodes expanded is around 2.3X more with the SLD heuristic than with the
+Manhattan heuristic.
+
+jwcha:~/.../:3932> ./PuzzleSolver.py insane.txt A_Star Manhattan
+solution length:  12
+nodes expanded:  108
+WNWNENESWWNW
+jwcha:~/.../:3933> ./PuzzleSolver.py insane.txt A_Star Other
+solution length:  12
+nodes expanded:  258
+WNNNESWSWNNW
+jwcha:~/.../:3934> 
+
 Optional: Explain any other heuristics you considered or implemented.
+
+We also implemented another heuristic called the Mismatch heuristic. This is a 
+simple heuristic that calculates cost by counting the number of numbers that
+are in the incorrect position. This heuristic is also admissable because
+the Mismatch heuristic counts the number of moves needed to bring the board
+into a goal state if we could swap pieces as desired without having to move the
+blank space. Since this is clearly an impossible action for the agent to take,
+we can safely assume that the heuristic will always undershoot the true cost.
+
 
 
 Analysis
 --------
 Run all of the different search algorithms for a single puzzle file, and include the output.
 Briefly analyze the results. Please include the puzzle file you used in your submission.
+
+The puzzle file "hard.txt" is given earlier above.
+
+jwcha:~/.../:3935> ./PuzzleSolver.py hard.txt Greedy Manhattan
+solution length:  8
+nodes expanded:  9
+WWNNWNWN
+jwcha:~/.../:3936> ./PuzzleSolver.py hard.txt Greedy Other
+solution length:  8
+nodes expanded:  9
+WWNNWNWN
+jwcha:~/.../:3937> ./PuzzleSolver.py hard.txt Greedy Mismatch
+solution length:  8
+nodes expanded:  9
+WWNNWNWN
+jwcha:~/.../:3938> ./PuzzleSolver.py hard.txt BFS
+solution length:  8
+nodes expanded:  2990
+WWNNWNWN
+jwcha:~/.../:3939> ./PuzzleSolver.py hard.txt DFS 10
+solution length:  8
+nodes expanded:  1311
+WWNNWNWN
+jwcha:~/.../:3940> ./PuzzleSolver.py hard.txt ID 10
+solution length:  8
+nodes expanded:  1310
+WWNNWNWN
+jwcha:~/.../:3941> ./PuzzleSolver.py hard.txt A_Star Manhattan
+solution length:  8
+nodes expanded:  9
+WWNNWNWN
+jwcha:~/.../:3942> ./PuzzleSolver.py hard.txt A_Star Other
+solution length:  8
+nodes expanded:  9
+WWNNWNWN
+jwcha:~/.../:3943> ./PuzzleSolver.py hard.txt A_Star Mismatch
+solution length:  8
+nodes expanded:  9
+WWNNWNWN
+jwcha:~/.../:3944> 
+
+jwcha:~:3949> uname -a
+Linux 3.2.0-32-generic #51-Ubuntu SMP Wed Sep 26 21:33:09 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+jwcha:~:3950> python --version
+Python 2.7.3
+jwcha:~:3951>
+
+All the algorithms seem to perform well, the only really expensive ones are
+BFS, DFS, and IDS. Because these three are very space intensive and generate
+a _lot_ of nodes, time complexity also increases because of the extra time
+needed to spend exploring these nodes.
 
 
 Other details
@@ -49,4 +158,19 @@ Other details
 Briefly describe any other implementation details or optimizations we should know about.
 Explain how to compile your code if it is not straightforward.
 
+How to use:
+Usage:
+> ./PuzzleSolver.py (puzzle file) (algorithm) [heuristic|depth]
 
+if this throws an error, it's probably because PuzzleSolver.py does not have
+the right permissions set. This can be resolved in two ways:
+
+*NOTE: make sure you're in the same directory as PuzzleSolver.py!*
+
+1) change the permissions to make it executable with the following command:
+> chmod +x PuzzleSolver.py
+
+OR
+
+2) execute the script via python with the following command:
+> python PuzzleSolver.py (puzzle file) (algorithm) [heuristic|depth]
