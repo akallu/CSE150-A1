@@ -3,6 +3,7 @@ import re
 import sys
 import copy
 import time
+import heapq
 
 class board:
   #constructs a board object which loads in a csv file of puzzle
@@ -109,7 +110,16 @@ class board:
       for num in a:
         print str(c[num]) + '\t',
       print ''
-  
+
+  def SLD(self):
+    score = 0
+    for i in xrange(self.n*self.m):
+      a = self.coords[i]; b = self.goal_coords[i]
+      score += ((a[0]-b[0])**2 + (a[1]-b[1])**2)**.5
+    return score
+
+  #heuristic that sums up every position that the two elements do not match
+  #between the current board state and the goal state
   def mismatches(self):
     score = 0
     for i in xrange(self.n):
@@ -118,6 +128,8 @@ class board:
           score += 1
     return score
 
+  #heuristic that returns the manhattan distance between every element in the
+  #current state and goal state
   def manhattan(self):
     score = 0
     for i in xrange(self.n*self.m):
@@ -153,22 +165,32 @@ def GBF(b, h):
   if b.mismatches() == 0:
     return ('', 0, 0)
   if h == 'Manhattan':
-    curr = min(b.make_all_states(), key=manhattan_helper)
+    cost = lambda x: x[0].manhattan()
   if h == 'Mismatch':
-    curr = min(b.make_all_states(), key=mismatch_helper)
+    cost = lambda x: x[0].mismatches()
+  if h == 'SLD' or h == 'Other':
+    cost = lambda x: x[0].SLD()
+  
+  #these moves signify that a descendant went back to an ancestor state
+  return_to_parent_state = ['NS', 'SN', 'WE', 'EW']
+
+  curr = min(b.make_all_states(), key=cost)
   path = curr[3]
+  
   #while the current boards mismatch score does not equal zero
   #remember a mismatch score = 0 means goal state has been reached
   #it represents cutoff size
-  while curr[1] != 0 and it < 1000:
+  while curr[0].mismatches() != 0 and it < 1000:
     it += 1
-    if h == 'Manhattan':
-      curr = min(curr[0].make_all_states(), key=manhattan_helper)
-    if h == 'Mismatch':
-      curr = min(curr[0].make_all_states(), key=mismatch_helper)
-    path += curr[3]
+    nodes = []
+    for node in curr[0].make_all_states():
+      if not curr[3]+node[3] in return_to_parent_state:
+        nodes.append(node)
+    curr = min(nodes, key=cost)
+    path += curr[3]  
   if it >= 1000:
     return -1
+
   return (len(path), len(path)+1, path)
 
 # Breadth First Search
@@ -268,11 +290,36 @@ def IDS(b, lim):
     if result != -1:
       return result
 
+def A_Star(b, h):
+  if h == 'Manhattan':
+    cost = lambda x: x.manhattan()
+  if h == 'SLD' or h == 'Other':
+    cost = lambda x: x.SLD()
+  if h == 'Mismatch':
+    cost = lambda x: x.mismatches()
+  #explored nodes, min priority queue
+  exp = []
+  nodes = b.make_all_states()
+  nodes_expanded = len(nodes)
+  return_to_parent_state = ['NS', 'SN', 'WE', 'EW']
+  for node in nodes:
+    heapq.heappush(exp, [len(node[3])+cost(node[0]), node[0], node[3]] )
+  while True:
+    curr = heapq.heappop(exp)
+    if curr[1].mismatches() == 0:
+      return (len(curr[2]), nodes_expanded, curr[2])
+    nodes = curr[1].make_all_states()
+    nodes_expanded += 1
+
+    for node in nodes:
+      if not curr[2]+node[3] in return_to_parent_state:
+        heapq.heappush(exp, [1+len(curr[2])+cost(node[0]), node[0], curr[2]+node[3]])
+
 def print_solutions(t):
   if t > 0:
-    print 'Sol. Length:\t', t[0]
-    print 'Nodes Expanded:\t', t[1]
-    print 'Sol. Path:\t', t[2]
+    print 'solution length: ', t[0]
+    print 'nodes expanded: ', t[1]
+    print t[2]
   else:
     print 'Solution was not found'
 
@@ -280,6 +327,8 @@ def mismatch_helper(t):
   return t[1]
 def manhattan_helper(t):
   return t[2]
+def sld_helper(t):
+  return t[0].SLD()
 
 def main():
   if len(sys.argv) < 3:
@@ -288,8 +337,6 @@ def main():
     sys.exit(1)
   b = board(sys.argv[1])
   alg = sys.argv[2]
-  print 'INITIAL STATE:'
-  b.print_matrix()
 
   if alg == 'Greedy':
     if len(sys.argv) < 4:
@@ -298,19 +345,19 @@ def main():
       print '> python board.py (puzzle file) (algorithm) (heuristic)\n'
       sys.exit(1)
     start = time.time()
-    print 'Greedy Best First Search found solution:' 
+    #print 'Greedy Best First Search found solution:' 
     print_solutions(GBF(b, sys.argv[3]))
-    print 'In time: ', time.time()-start, '\n'
+    #print 'In time: ', time.time()-start, '\n'
   elif alg == 'A_Star':
     start = time.time()
-    print 'A* Search found solution:' 
-    print_solutions(A_Star(b, 'Mismatch'))
-    print 'In time: ', time.time()-start, '\n'
+    #print 'A* Search found solution:' 
+    print_solutions(A_Star(b, sys.argv[3]))
+    #print 'In time: ', time.time()-start, '\n'
   elif alg == 'BFS':
     start = time.time()
-    print 'Breadth First Search found solution:' 
+    #print 'Breadth First Search found solution:' 
     print_solutions(BFS(b))
-    print 'In time: ', time.time()-start, '\n'  
+    #print 'In time: ', time.time()-start, '\n'  
   elif alg == 'DFS':
     if len(sys.argv) < 4:
       print 'Depth not specified'
@@ -318,14 +365,14 @@ def main():
       print '> python board.py (puzzle file) (algorithm) (depth)\n'
       sys.exit(1)
     start = time.time()
-    print 'Depth-limited Depth First Search found solution:'
+    #print 'Depth-limited Depth First Search found solution:'
     print_solutions(DFS(b, sys.argv[3]))
-    print 'In time: ', time.time()-start, '\n'
-  elif alg == 'IDS':
+    #print 'In time: ', time.time()-start, '\n'
+  elif alg == 'ID':
     start = time.time()
-    print 'Iterative Deepening Search found solution:'
+    #print 'Iterative Deepening Search found solution:'
     print_solutions(IDS(b, int(sys.argv[3])))
-    print 'In time: ', time.time()-start, '\n'
+    #print 'In time: ', time.time()-start, '\n'
   else:
     print 'Usage:'
     print '> python board.py (puzzle file) (algorithm) [heuristic|depth]\n' 
